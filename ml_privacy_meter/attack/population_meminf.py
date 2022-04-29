@@ -5,7 +5,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import accuracy_score, auc, confusion_matrix, roc_auc_score
 
-from ml_privacy_meter.utils.attack_utils import get_predictions, get_per_class_indices, calculate_loss_threshold
+from ml_privacy_meter.utils.attack_utils import get_predictions, get_per_class_indices
+from ml_privacy_meter.utils.attack_utils import calculate_loss_threshold, get_labels
+
 
 
 class PopulationAttack:
@@ -13,22 +15,35 @@ class PopulationAttack:
                  x_target_train, y_target_train,
                  x_target_test, y_target_test,
                  target_model_filepath, target_model_type,
-                 loss_fn, num_data_in_class, seed,
-                 target_model_class=None):
+                 loss_fn, num_data_in_class, num_classes, seed, gandlf_config,
+                 target_model_class=None, device='cpu'):
+
+        # The data below come in as GANDLF.data.loader_restrictor.LoaderRestrictor
+        # objects. Numpy slicing funcionality is replaced by using the 
+        # LoaderRestrictor method, 'set_idx_restrictions'. All features are ultimately
+        # iterated over inside get_predictions at which point LoaderFestrictor produces tensors. 
+        # Predictions coming out of get_predictions is a numpy array. Labels are converted
+        # to numpy and one-hot encoded immediately below upon assignment to class attritutes.
+
         self.x_population = x_population
-        self.y_population = y_population
+        self.y_population = get_labels(y_population, num_classes=num_classes)
         self.x_target_train = x_target_train
-        self.y_target_train = y_target_train
+        self.y_target_train = get_labels(y_target_train, num_classes=num_classes)
+        # TODO: remove debug below
+        print(20*"#")
+        print("shape of self.y_target_train is: ", self.y_target_train.shape)
         self.x_target_test = x_target_test
-        self.y_target_test = y_target_test
+        self.y_target_test = get_labels(y_target_test, num_classes=num_classes)
         self.target_model_filepath = target_model_filepath
         self.target_model_type = target_model_type
         self.target_model_class = target_model_class
         self.loss_fn = loss_fn
         self.num_data_in_class = num_data_in_class
         self.seed = seed
+        self.gandlf_config=gandlf_config
 
-        self.num_classes = self.y_population.shape[1]
+        self.num_classes = num_classes
+        self.device=device
 
         # create results directory
         self.attack_results_dirpath = f'logs/population_attack_{exp_name}/'
@@ -40,23 +55,30 @@ class PopulationAttack:
         Compute and save loss values of the target model on its train and test data.
         """
         print("Computing and saving train and test losses of the target model...")
-
+        # TODO: remove degub print below
+        print("BE In compare attack - Computing train losses...")
         train_losses = self.loss_fn(
             y_true=self.y_target_train,
             y_pred=get_predictions(
                 model_filepath=self.target_model_filepath,
                 model_type=self.target_model_type,
                 data=self.x_target_train,
-                model_class=self.target_model_class
+                model_class=self.target_model_class, 
+                gandlf_config=self.gandlf_config,
+                device=self.device
             )
         )
+        # TODO: remove debug print below
+        print("BE Computing test losses...")
         test_losses = self.loss_fn(
             y_true=self.y_target_test,
             y_pred=get_predictions(
                 model_filepath=self.target_model_filepath,
                 model_type=self.target_model_type,
                 data=self.x_target_test,
-                model_class=self.target_model_class
+                model_class=self.target_model_class, 
+                gandlf_config=self.gandlf_config, 
+                device=self.device
             )
         )
 
@@ -81,7 +103,7 @@ class PopulationAttack:
 
         # get per-class indices
         per_class_indices = get_per_class_indices(
-            x=self.x_population, y=self.y_population,
+            y=self.y_population,
             num_data_in_class=self.num_data_in_class,
             seed=self.seed
         )
@@ -95,14 +117,19 @@ class PopulationAttack:
             pop_losses = []
             for c in range(self.num_classes):
                 indices = per_class_indices[c]
-                x_class, y_class = self.x_population[indices], self.y_population[indices]
+                further_restricted_x_population = self.x_population.copy()
+                further_restricted_x_population.set_idx_restrictions(indices)
+                x_class = further_restricted_x_population  
+                y_class = self.y_population[indices]
                 losses = self.loss_fn(
                     y_true=y_class,
                     y_pred=get_predictions(
                         model_filepath=self.target_model_filepath,
                         model_type=self.target_model_type,
                         data=x_class,
-                        model_class=self.target_model_class
+                        model_class=self.target_model_class, 
+                        device=self.device, 
+                        gandlf_config=self.gandlf_config
                     )
                 )
                 pop_losses.append(losses)

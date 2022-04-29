@@ -37,60 +37,86 @@ def time_taken(self, start_time, end_time):
     return hours, minutes, np.int(seconds)
 
 
-def get_predictions(model_filepath, model_type, data, model_class=None):
-    predictions = []
+def get_predictions(model_filepath, model_type, data, gandlf_config, model_class=None, device='cpu'):
     if model_type == MODEL_TYPE_OPENVINO:
-        ie = IECore()
-        net = ie.read_network(model=model_filepath)
-        exec_net = ie.load_network(network=net, device_name='CPU')
-        input_layer = next(iter(net.input_info))
-        output_layer = next(iter(net.outputs))
-
-        input_shape_net = net.input_info[input_layer].tensor_desc.dims
-
-        # reshape network so that its batch_size = len(data)
-        new_input_shape_net = input_shape_net
-        new_input_shape_net[0] = len(data)
-        net.reshape({input_layer: new_input_shape_net})
-        exec_net = ie.load_network(network=net, device_name='CPU')
-
-        predictions = exec_net.infer({input_layer: data})[output_layer]
-        return predictions
+        raise ValueError("OpenVINO models are not supported.")
     elif model_type == MODEL_TYPE_TENSORFLOW:
         model = tf.keras.models.load_model(model_filepath)
         predictions = model(data)
     elif model_type == MODEL_TYPE_PYTORCH:
-        model = model_class()  # pytorch models need to be instantiated
+        model = model_class(parameters=gandlf_config)  # pytorch models need to be instantiated
         model.load_state_dict(torch.load(model_filepath))
+        model.to(device)
         model.eval()
 
-        # pytorch models need channels-first data
-        data_nchw = torch.Tensor(data)
-        data_nchw = data_nchw.permute(0, 3, 1, 2)
+        predictions = np.array([])
+        for idx, batch in enumerate(data):
+            # TODO: This code should really live in the data loader
+            batch = torch.squeeze(batch, dim=-1)
+            #batch = torch.transpose(batch, [0,])
 
-        predictions = model(data_nchw).detach().numpy()
+            # TODO: remove debug print below
+            #print("BE batch size from config is: ", gandlf_config['batch_size'])
+            #print("BE batch shape is: ", batch.shape)
+            batch_predictions = model(batch).detach().cpu().numpy()
+            # TODO: remove debug below
+            if idx == 0:
+                predictions = batch_predictions
+            else:
+                predictions = np.append(predictions, batch_predictions, 0)
     else:
         raise ValueError("Please specify one of the supported model types: `openvino`, `tensorflow`, or `pytorch`!")
     return predictions
 
+def get_labels_from_batch(batch_loader_labels, num_classes, labels_out=None):
+    # Produces one-hot encoded labels for batch, when the expected
+    # batch_labels coming in are an iterator of integer labels
+    if batch_loader_labels.shape == (num_classes,):
+        if labels_out is None:
+            return np.expand_dims(batch_loader_labels, 0)
+        else:
+            return np.append(labels_out, np.expand_dims(batch_loader_labels, 0), 0)
+    else:
+    # TODO: currently expecting a single one-hot encoded class
+        raise ValueError(f"Need to change code to account for larger batch than size 1 since this batch first dimension is: {len(batch_loader_labels)}")
+    
 
-def get_per_class_indices(x, y, num_data_in_class, seed):
+def get_labels(label_loader_restrictor, num_classes):
+    for idx, batch_loader_labels in enumerate(label_loader_restrictor):
+        if idx == 0:
+            labels_out = get_labels_from_batch(batch_loader_labels=batch_loader_labels, 
+                                               num_classes=num_classes, 
+                                               labels_out=None)
+        else:
+            labels_out = get_labels_from_batch(batch_loader_labels=batch_loader_labels, 
+                                               num_classes=num_classes, 
+                                               labels_out=labels_out)
+    return labels_out
+
+def get_per_class_indices(y, num_data_in_class, seed):
     num_classes = y.shape[1]
-
+    # TODO: Figure out correct setting for train and test size below
+    # TODO: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    """
     per_class_splitter = StratifiedShuffleSplit(n_splits=1,
                                                 train_size=(num_data_in_class * num_classes),
                                                 test_size=100,
                                                 random_state=seed)
-
+    """
+    per_class_splitter = StratifiedShuffleSplit(n_splits=1,
+                                                train_size=0.5,
+                                                random_state=seed)
     split_indices = []
-    for indices, _ in per_class_splitter.split(x, y):
+    # previously the first y was given as x, but we do not need it and x is a loader_restrictor so don't want to use
+    for indices, _ in per_class_splitter.split(y, y):
+        # this iterator is length one since n_splits above is 1
         split_indices = indices
 
     per_class_indices = []
     for c in range(num_classes):
         indices = []
         for idx in split_indices:
-            x_point, y_point = x[idx], y[idx]
+            y_point = y[idx]
             if c == np.argmax(y_point):
                 indices.append(idx)
         # print(f"Number of samples from class {c} = {len(indices)}")
