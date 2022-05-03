@@ -113,7 +113,7 @@ def get_model_class_and_loaders(parameters, train_csv_path, test_csv_path, popul
     parameters = populate_header_in_parameters(parameters, headers_train)
 
     training_data_for_torch = ImagesFromDataFrame(
-        train_paths, parameters, train=True, loader_type="train"
+        train_paths, parameters, train=False, loader_type="train"
     )
 
     # Fetch the appropriate channel keys
@@ -125,7 +125,7 @@ def get_model_class_and_loaders(parameters, train_csv_path, test_csv_path, popul
     # get the train loader
     train_loader = DataLoader(
         training_data_for_torch,
-        batch_size=1,
+        batch_size=batch_size,
         shuffle=False,
         pin_memory=False,  # params["pin_memory_dataloader"], # this is going OOM if True - needs investigation
     )
@@ -135,12 +135,12 @@ def get_model_class_and_loaders(parameters, train_csv_path, test_csv_path, popul
         test_csv_path, train=True
     )    
     test_data_for_torch = ImagesFromDataFrame(
-        test_paths, parameters, train=True, loader_type="train"
+        test_paths, parameters, train=False, loader_type="train"
     )
     # get the test loader
     test_loader = DataLoader(
         test_data_for_torch,
-        batch_size=1,
+        batch_size=batch_size,
         shuffle=False,
         pin_memory=False,  # params["pin_memory_dataloader"], # this is going OOM if True - needs investigation
     )
@@ -151,13 +151,13 @@ def get_model_class_and_loaders(parameters, train_csv_path, test_csv_path, popul
     )
     
     population_data_for_torch = ImagesFromDataFrame(
-        population_paths, parameters, train=True, loader_type="train"
+        population_paths, parameters, train=False, loader_type="train"
     )
 
     # get the population loader
     population_loader = DataLoader(
         population_data_for_torch,
-        batch_size=1,
+        batch_size=batch_size,
         shuffle=False,
         pin_memory=False,  # params["pin_memory_dataloader"], # this is going OOM if True - needs investigation
     )
