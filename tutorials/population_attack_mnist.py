@@ -21,17 +21,13 @@ from GANDLF.data.loader_restrictor import LoaderRestrictor
 
 import ml_privacy_meter
 
-
-# Here is some cut and paste to help know what to import
-#########################################
-
 from GANDLF.utils import populate_header_in_parameters, parseTrainingCSV, populate_channel_keys_in_params
 from GANDLF.data.ImagesFromDataFrame import ImagesFromDataFrame 
 
 
 # Set attack hyperparameters
-# TODO: modify this value for specific data set being used
-num_data_in_class = 400
+# This determines how many points per class are used to profile the population loss values
+num_data_in_class = 1000
 
 device = 'cuda'
 
@@ -41,15 +37,14 @@ gandlf_config_path = '/home/edwardsb/projects/SBU-TIL/configs/brandon_quick_test
 gandlf_config = parseConfig(gandlf_config_path)
 gandlf_config['device'] = gandlf_config.get('device', device)
 
-# TODO: These current paths are for testing, need to make sure the associate files incorporate proper class balencing
 population_csv_path = "/home/edwardsb/projects/SBU-TIL/MNIST_Data/MNIST_pm_population_small.csv"
 train_csv_path = "/home/edwardsb/projects/SBU-TIL/MNIST_Data/MNIST_pm_train_small.csv"
 test_csv_path =  "/home/edwardsb/projects/SBU-TIL/MNIST_Data/MNIST_pm_test_small.csv"
 
-# Values immediately below intended to change with data example
-# TODO: some below are not even used
-epochs = 50
-batch_size = 64
+batch_size = 1
+# We will keep this batch size as some code expects it
+assert batch_size == 1
+
 model_name = 'tutorial_pytorch_mnist'
 exp_name = 'tutorial_pytorch_mnist'
 
@@ -58,12 +53,8 @@ model_filepath = '/raid/edwardsb/models/projects/SBU-TIL/MNIST/mnist_imagenet_vg
 
 # defining dict for models - key is the string and the value is the transform object
 global_models_dict = {
-    "vgg": vgg19,
-    "vgg11": vgg11,
-    "vgg13": vgg13,
     "vgg16": vgg16,
-    "vgg19": vgg19,
-    "imagenet_vgg16": imagenet_vgg16
+   "imagenet_vgg16": imagenet_vgg16
 }
 
 def gandlf_dict_to_feature(subject_dict, gandlf_config):
@@ -99,8 +90,6 @@ def get_model_class_and_loaders(parameters, train_csv_path, test_csv_path, popul
         test_loader (torch.utils.data.DataLoader): The testing data loader.
         population_loader (torch.utils.data.DataLoader): The population data loader.
     """
-
-    # TODO: Make sure the loaders are not shuffling (consistently produce the same samples in the same order)
 
     # initialize loaders
     train_loader, test_loader, population_loader = None, None, None
@@ -186,7 +175,6 @@ if __name__ == '__main__':
     if os.path.isfile(model_filepath):
         print(f"Model already trained. Continuing...")
     else:
-        # THIS CODE NOT INTENDED TO BE EXECUTED
         raise RuntimeError('This script was not intended to be used if the model is not trained yet.')
 
     x_train = LoaderRestrictor(base_loader=train_loader, 

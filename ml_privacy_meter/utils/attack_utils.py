@@ -55,11 +55,7 @@ def get_predictions(model_filepath, model_type, data, gandlf_config, model_class
             batch = torch.squeeze(batch, dim=-1)
             #batch = torch.transpose(batch, [0,])
 
-            # TODO: remove debug print below
-            #print("BE batch size from config is: ", gandlf_config['batch_size'])
-            #print("BE batch shape is: ", batch.shape)
             batch_predictions = model(batch).detach().cpu().numpy()
-            # TODO: remove debug below
             if idx == 0:
                 predictions = batch_predictions
             else:
@@ -77,7 +73,7 @@ def get_labels_from_batch(batch_loader_labels, num_classes, labels_out=None):
         else:
             return np.append(labels_out, np.expand_dims(batch_loader_labels, 0), 0)
     else:
-    # TODO: currently expecting a single one-hot encoded class
+    # currently expecting a single one-hot encoded class
         raise ValueError(f"Need to change code to account for larger batch than size 1 since this batch first dimension is: {len(batch_loader_labels)}")
     
 
@@ -99,7 +95,7 @@ def get_per_class_indices(y, num_data_in_class, seed):
     # TODO: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     """
     per_class_splitter = StratifiedShuffleSplit(n_splits=1,
-                                                train_size=(num_data_in_class * num_classes),
+                                                train_size=(num_data_in_class * num_classes)/len(y),
                                                 test_size=100,
                                                 random_state=seed)
     """

@@ -29,9 +29,6 @@ class PopulationAttack:
         self.y_population = get_labels(y_population, num_classes=num_classes)
         self.x_target_train = x_target_train
         self.y_target_train = get_labels(y_target_train, num_classes=num_classes)
-        # TODO: remove debug below
-        print(20*"#")
-        print("shape of self.y_target_train is: ", self.y_target_train.shape)
         self.x_target_test = x_target_test
         self.y_target_test = get_labels(y_target_test, num_classes=num_classes)
         self.target_model_filepath = target_model_filepath
@@ -55,8 +52,6 @@ class PopulationAttack:
         Compute and save loss values of the target model on its train and test data.
         """
         print("Computing and saving train and test losses of the target model...")
-        # TODO: remove degub print below
-        print("BE In compare attack - Computing train losses...")
         train_losses = self.loss_fn(
             y_true=self.y_target_train,
             y_pred=get_predictions(
@@ -68,8 +63,6 @@ class PopulationAttack:
                 device=self.device
             )
         )
-        # TODO: remove debug print below
-        print("BE Computing test losses...")
         test_losses = self.loss_fn(
             y_true=self.y_target_test,
             y_pred=get_predictions(
