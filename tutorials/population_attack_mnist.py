@@ -37,9 +37,9 @@ gandlf_config_path = '/home/edwardsb/projects/SBU-TIL/configs/brandon_quick_test
 gandlf_config = parseConfig(gandlf_config_path)
 gandlf_config['device'] = gandlf_config.get('device', device)
 
-population_csv_path = "/home/edwardsb/projects/SBU-TIL/MNIST_Data/MNIST_pm_population_small.csv"
-train_csv_path = "/home/edwardsb/projects/SBU-TIL/MNIST_Data/MNIST_pm_train_small.csv"
-test_csv_path =  "/home/edwardsb/projects/SBU-TIL/MNIST_Data/MNIST_pm_test_small.csv"
+population_csv_path = "/home/edwardsb/projects/SBU-TIL/MNIST_Data/MNIST_pm_population.csv"
+train_csv_path = "/home/edwardsb/projects/SBU-TIL/MNIST_Data/MNIST_pm_train.csv"
+test_csv_path =  "/home/edwardsb/projects/SBU-TIL/MNIST_Data/MNIST_pm_test.csv"
 
 batch_size = 1
 # We will keep this batch size as some code expects it
