@@ -13,10 +13,10 @@ created by pulling from the original train set in such a way that the final priv
 # Here are some hard coded choices
 ######################################
 
-orig_train_csv_path = "/home/edwardsb/projects/SBU-TIL/MNIST_Data/MNIST_training.csv"
-orig_test_csv_path = "/home/edwardsb/projects/SBU-TIL/MNIST_Data/MNIST_testing.csv"
+orig_train_csv_path = "/home/aspaul/MNIST_dataset_png/mnist_png/MNIST_gandlf_training.csv"
+orig_test_csv_path = "/home/aspaul/MNIST_dataset_png/mnist_png/MNIST_gandlf_testing.csv"
 
-new_csv_folder = "/home/edwardsb/projects/SBU-TIL/MNIST_Data/"
+new_csv_folder = "/home/aspaul/MNIST_dataset_png/mnist_png/"
 
 data_name = "MNIST"
 
@@ -116,7 +116,7 @@ if __name__ == '__main__':
     if len(test_df) + len(pop_df) != len(orig_test_df):
         raise ValueError(f"Test plus train lengths: {len(test_df) + len(pop_df)} does not equal orig test length: {len(orig_test_df)}")
 
-    new_train_csv_path = os.path.join(new_csv_folder, data_name + "_pm_train_class_balances.csv") 
+    new_train_csv_path = os.path.join(new_csv_folder, data_name + "_pm_train_class_balanced.csv") 
     new_test_csv_path = os.path.join(new_csv_folder, data_name + "_pm_test_class_balanced.csv") 
     new_pop_csv_path = os.path.join(new_csv_folder, data_name + "_pm_population_class_balanced.csv")
 
