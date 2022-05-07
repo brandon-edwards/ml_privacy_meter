@@ -209,16 +209,15 @@ class PopulationAttack:
 
             auc_value[c] = round(auc(x=fpr_values[c], y=tpr_values[c]), 5)
 
-        for idx, c in enumerate(range(self.num_classes)):
-            fig, ax = plt.subplots(1, self.num_classes, idx)
+            print(fpr_values, tpr_values, auc_value)
+
             plt.plot(fpr_values[c],
                     tpr_values[c],
                     linewidth=2.0,
                     color='b',
                     label=f'AUC = {auc_value[c]}')
-            ax.set_xlabel("FPR")
-            ax.set_ylabel("TPR")
-            ax.set_ylim([0.0, 1.1])
-            ax.legend(loc='lower right')
-        plt.savefig(f'{self.attack_results_dirpath}/class_{c}_tpr_vs_fpr', dpi=250)
-        plt.close(fig)
+            plt.xlabel("FPR")
+            plt.ylabel("TPR")
+            plt.ylim([0.0, 1.1])
+            plt.legend(loc='lower right')
+            plt.savefig(f'{self.attack_results_dirpath}/tpr_vs_fpr_class_{c}', dpi=250)
