@@ -8,8 +8,10 @@ import tensorflow.keras.backend as K
 from sklearn.model_selection import StratifiedShuffleSplit
 from tensorflow.compat.v1.train import Saver
 
-from openvino.inference_engine import IECore
+# from openvino.inference_engine import IECore
 import torch
+
+from GANDLF.utils import load_model
 
 MODEL_TYPE_OPENVINO = 'openvino'
 MODEL_TYPE_TENSORFLOW = 'tensorflow'
@@ -45,7 +47,10 @@ def get_predictions(model_filepath, model_type, data, gandlf_config, model_class
         predictions = model(data)
     elif model_type == MODEL_TYPE_PYTORCH:
         model = model_class(parameters=gandlf_config)  # pytorch models need to be instantiated
-        model.load_state_dict(torch.load(model_filepath))
+        main_dict = load_model(model_filepath, device)
+        model.load_state_dict(main_dict["model_state_dict"])
+
+        # model.load_state_dict(torch.load(model_filepath))
         model.to(device)
         model.eval()
 

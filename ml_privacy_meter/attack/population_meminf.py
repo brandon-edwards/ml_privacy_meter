@@ -137,46 +137,50 @@ class PopulationAttack:
                 threshold = calculate_loss_threshold(alpha, pop_losses[c])
                 per_class_thresholds.append(threshold)
 
-            # generate predictions: <= threshold, output '1' (member) else '0' (non-member)
-            preds = []
+            # generate per class membership predictions: <= threshold, output '1' (member) else '0' (non-member)
+            # and record per class membership ground truth(y_eval)
+            preds = {c: [] for c in range(self.num_classes)}
+            y_eval = {c: [] for c in range(self.num_classes)}
             for (loss, label) in zip(train_losses, self.y_target_train):
                 c = int(np.argmax(label))
                 threshold = per_class_thresholds[c]
                 if loss <= threshold:
-                    preds.append(1)
+                    preds[c].append(1)
                 else:
-                    preds.append(0)
+                    preds[c].append(0)
+                y_eval[c].append(1)
 
             for (loss, label) in zip(test_losses, self.y_target_test):
                 c = int(np.argmax(label))
                 threshold = per_class_thresholds[c]
                 if loss <= threshold:
-                    preds.append(1)
+                    preds[c].append(1)
                 else:
-                    preds.append(0)
-
-            y_eval = [1] * len(train_losses)
-            y_eval.extend([0] * len(test_losses))
+                    preds[c].append(0)
+                y_eval[c].append(0)
 
             # save attack results
-            acc = accuracy_score(y_eval, preds)
-            roc_auc = roc_auc_score(y_eval, preds)
-            tn, fp, fn, tp = confusion_matrix(y_eval, preds).ravel()
-            np.savez(f"{self.attack_results_dirpath}/attack_results_{alpha}_{self.num_data_in_class}",
-                     true_labels=y_eval, preds=preds,
-                     alpha=alpha, num_data_in_class=self.num_data_in_class,
-                     per_class_thresholds=per_class_thresholds,
-                     acc=acc, roc_auc=roc_auc,
-                     tn=tn, fp=fp, tp=tp, fn=fn)
-
-            print(
-                f"Population attack performance:\n"
-                f"Number of points in class: {self.num_data_in_class}\n"
-                f"Accuracy = {acc}\n"
-                f"ROC AUC Score = {roc_auc}\n"
-                f"FPR: {fp / (fp + tn)}\n"
-                f"TN, FP, FN, TP = {tn, fp, fn, tp}"
-            )
+            acc = {c: accuracy_score(y_eval[c], preds[c]) for c in range(self.num_classes)}
+            roc_auc = {c: roc_auc_score(y_eval[c], preds[c]) for c in range(self.num_classes)}
+            tn, fp, fn, tp = {}, {}, {}, {}
+            for c in range(self.num_classes):
+                tn[c], fp[c], fn[c], tp[c] = confusion_matrix(y_eval[c], preds[c]).ravel()
+                np.savez(f"{self.attack_results_dirpath}/attack_results_alpha_{alpha}_numdatinclass_{self.num_data_in_class}_class_{c}",
+                        true_labels=y_eval[c], preds=preds[c],
+                        alpha=alpha, num_data_in_class=self.num_data_in_class,
+                        per_class_thresholds=per_class_thresholds,
+                        acc=acc[c], roc_auc=roc_auc[c],
+                        tn=tn[c], fp=fp[c], tp=tp[c], fn=fn[c])
+                
+                print()
+                print(
+                    f"Population attack performance:\n"
+                    f"Number of points in class: {self.num_data_in_class}\n"
+                    f"Accuracy for class {c} = {acc[c]}\n"
+                    f"ROC AUC Score for class {c} = {roc_auc[c]}\n"
+                    f"FPR for class {c}: {fp[c] / (fp[c] + tn[c])}\n"
+                    f"TN, FP, FN, TP for class {c} = {tn[c], fp[c], fn[c], tp[c]}"
+                )
 
     def visualize_attack(self, alphas):
         alphas = sorted(alphas)
