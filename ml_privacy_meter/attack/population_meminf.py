@@ -184,38 +184,40 @@ class PopulationAttack:
 
     def visualize_attack(self, alphas):
         alphas = sorted(alphas)
+        auc_value = {}
 
-        tpr_values = []
-        fpr_values = []
+        tpr_values = {c: [] for c in range(self.num_classes)}
+        fpr_values = {c: [] for c in range(self.num_classes)}
 
-        for alpha in alphas:
-            filepath = f'{self.attack_results_dirpath}/attack_results_{alpha}_{self.num_data_in_class}.npz'
-            with np.load(filepath, allow_pickle=True) as data:
-                tp = data['tp'][()]
-                fp = data['fp'][()]
-                tn = data['tn'][()]
-                fn = data['fn'][()]
-            tpr = tp / (tp + fn)
-            fpr = fp / (fp + tn)
-            tpr_values.append(tpr)
-            fpr_values.append(fpr)
+        for c in range(self.num_classes):
+            for alpha in alphas:
+                filepath = f'{self.attack_results_dirpath}/attack_results_{alpha}_{self.num_data_in_class}.npz'
+                with np.load(filepath, allow_pickle=True) as data:
+                    tp = data['tp'][()]
+                    fp = data['fp'][()]
+                    tn = data['tn'][()]
+                    fn = data['fn'][()]
+                tpr = tp / (tp + fn)
+                fpr = fp / (fp + tn)
+                tpr_values[c].append(tpr)
+                fpr_values[c].append(fpr)
 
-        tpr_values.insert(0, 0)
-        fpr_values.insert(0, 0)
-        tpr_values.append(1)
-        fpr_values.append(1)
+            tpr_values[c].insert(0, 0)
+            fpr_values[c].insert(0, 0)
+            tpr_values[c].append(1)
+            fpr_values[c].append(1)
 
-        auc_value = round(auc(x=fpr_values, y=tpr_values), 5)
+            auc_value[c] = round(auc(x=fpr_values[c], y=tpr_values[c]), 5)
 
-        fig, ax = plt.subplots()
-        ax.plot(fpr_values,
-                tpr_values,
-                linewidth=2.0,
-                color='b',
-                label=f'AUC = {auc_value}')
-        ax.set_xlabel("FPR")
-        ax.set_ylabel("TPR")
-        ax.set_ylim([0.0, 1.1])
-        ax.legend(loc='lower right')
-        plt.savefig(f'{self.attack_results_dirpath}/tpr_vs_fpr', dpi=250)
-        plt.close(fig)
+            print(fpr_values, tpr_values, auc_value)
+
+            plt.plot(fpr_values[c],
+                    tpr_values[c],
+                    linewidth=2.0,
+                    color='b',
+                    label=f'AUC = {auc_value[c]}')
+            plt.xlabel("FPR")
+            plt.ylabel("TPR")
+            plt.ylim([0.0, 1.1])
+            plt.legend(loc='lower right')
+            plt.savefig(f'{self.attack_results_dirpath}/tpr_vs_fpr_class_{c}', dpi=250)
