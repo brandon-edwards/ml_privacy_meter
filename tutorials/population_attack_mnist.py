@@ -28,7 +28,7 @@ from GANDLF.data.ImagesFromDataFrame import ImagesFromDataFrame
 
 # Set attack hyperparameters
 # This determines how many points per class are used to profile the population loss values
-num_data_in_class = 500
+num_data_in_class = 1000
 
 device = 'cuda'
 

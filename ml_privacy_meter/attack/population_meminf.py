@@ -191,7 +191,7 @@ class PopulationAttack:
 
         for c in range(self.num_classes):
             for alpha in alphas:
-                filepath = f'{self.attack_results_dirpath}/attack_results_{alpha}_{self.num_data_in_class}.npz'
+                filepath = f'{self.attack_results_dirpath}/attack_results_alpha_{alpha}_numdatinclass_{self.num_data_in_class}_class_{c}.npz'
                 with np.load(filepath, allow_pickle=True) as data:
                     tp = data['tp'][()]
                     fp = data['fp'][()]
@@ -209,7 +209,7 @@ class PopulationAttack:
 
             auc_value[c] = round(auc(x=fpr_values[c], y=tpr_values[c]), 5)
 
-            print(fpr_values, tpr_values, auc_value)
+            print(fpr_values[c], tpr_values[c], auc_value[c])
 
             plt.plot(fpr_values[c],
                     tpr_values[c],
@@ -221,3 +221,4 @@ class PopulationAttack:
             plt.ylim([0.0, 1.1])
             plt.legend(loc='lower right')
             plt.savefig(f'{self.attack_results_dirpath}/tpr_vs_fpr_class_{c}', dpi=250)
+            plt.close()
