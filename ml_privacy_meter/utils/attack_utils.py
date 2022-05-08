@@ -8,7 +8,7 @@ import tensorflow.keras.backend as K
 from sklearn.model_selection import StratifiedShuffleSplit
 from tensorflow.compat.v1.train import Saver
 
-from openvino.inference_engine import IECore
+# from openvino.inference_engine import IECore
 import torch
 
 from GANDLF.utils import load_model

@@ -13,8 +13,9 @@ import torch.nn.functional as F
 from torchio import DATA
 
 import tensorflow as tf
+# from torch.nn import CrossEntropyLoss
 
-from GANDLF.models import vgg11, vgg13, vgg16, vgg19, imagenet_vgg16 
+from GANDLF.models import vgg16, imagenet_vgg16 
 from GANDLF.parseConfig import parseConfig
 
 from GANDLF.data.loader_restrictor import LoaderRestrictor
@@ -32,14 +33,14 @@ num_data_in_class = 1000
 device = 'cuda'
 
 # GaNDLF config path here
-gandlf_config_path = '/home/edwardsb/projects/SBU-TIL/configs/brandon_quick_test_config_mnist.yaml'
+gandlf_config_path = '/home/aspaul/GaNDLF/samples/config_classification_MNIST.yaml'
 
 gandlf_config = parseConfig(gandlf_config_path)
 gandlf_config['device'] = gandlf_config.get('device', device)
 
-population_csv_path = "/home/edwardsb/projects/SBU-TIL/MNIST_Data/MNIST_pm_population_small.csv"
-train_csv_path = "/home/edwardsb/projects/SBU-TIL/MNIST_Data/MNIST_pm_train_small.csv"
-test_csv_path =  "/home/edwardsb/projects/SBU-TIL/MNIST_Data/MNIST_pm_test_small.csv"
+population_csv_path = "/home/aspaul/MNIST_dataset_png/mnist_png/MNIST_pm_population_class_balanced.csv"
+train_csv_path = "/home/aspaul/MNIST_dataset_png/mnist_png/MNIST_pm_train_class_balanced.csv"
+test_csv_path =  "/home/aspaul/MNIST_dataset_png/mnist_png/MNIST_pm_test_class_balanced.csv"
 
 batch_size = 1
 # We will keep this batch size as some code expects it
@@ -48,9 +49,8 @@ assert batch_size == 1
 model_name = 'tutorial_pytorch_mnist'
 exp_name = 'tutorial_pytorch_mnist'
 
-model_filepath = '/raid/edwardsb/models/projects/SBU-TIL/MNIST/imagenet_vgg16_best.pth.tar'
+model_filepath = '/home/aspaul/GaNDLF/experiment_e15_imagenetvgg16_modeleveryepoch/model_dir/imagenet_vgg16_best.pth.tar'
     
-
 # defining dict for models - key is the string and the value is the transform object
 global_models_dict = {
     "vgg16": vgg16,
@@ -207,6 +207,7 @@ if __name__ == '__main__':
 
     # create population attack object
     loss_fn = tf.keras.losses.CategoricalCrossentropy(from_logits=True, reduction=tf.keras.losses.Reduction.NONE)
+    # loss_fn = CrossEntropyLoss(reduction='none')
     population_attack_obj = ml_privacy_meter.attack.population_meminf.PopulationAttack(
         exp_name=exp_name,
         gandlf_config=gandlf_config,
