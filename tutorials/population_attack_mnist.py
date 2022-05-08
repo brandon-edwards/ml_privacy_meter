@@ -207,7 +207,7 @@ if __name__ == '__main__':
 
     # create population attack object
     loss_fn = tf.keras.losses.CategoricalCrossentropy(from_logits=True, reduction=tf.keras.losses.Reduction.NONE)
-    # loss_fn = CrossEntropyLoss()
+    # loss_fn = CrossEntropyLoss(reduction='none')
     population_attack_obj = ml_privacy_meter.attack.population_meminf.PopulationAttack(
         exp_name=exp_name,
         gandlf_config=gandlf_config,
