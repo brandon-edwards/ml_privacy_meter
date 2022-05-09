@@ -16,7 +16,7 @@ class PopulationAttack:
                  x_target_test, y_target_test,
                  target_model_filepath, target_model_type,
                  loss_fn, num_data_in_class, num_classes, seed, gandlf_config,
-                 target_model_class=None, device='cpu'):
+                 logger, target_model_class=None, device='cpu'):
 
         # The data below come in as GANDLF.data.loader_restrictor.LoaderRestrictor
         # objects. Numpy slicing funcionality is replaced by using the 
@@ -41,6 +41,7 @@ class PopulationAttack:
 
         self.num_classes = num_classes
         self.device=device
+        self.logger = logger
 
         # create results directory
         self.attack_results_dirpath = f'logs/population_attack_{exp_name}/'
@@ -51,7 +52,7 @@ class PopulationAttack:
         """
         Compute and save loss values of the target model on its train and test data.
         """
-        print("Computing and saving train and test losses of the target model...")
+        self.logger.critical("Computing and saving train and test losses of the target model...")
         train_losses = self.loss_fn(
             y_true=self.y_target_train,
             y_pred=get_predictions(
@@ -83,7 +84,7 @@ class PopulationAttack:
         """
         Run the population attack on the target model.
         """
-        print("Running the population attack on the target model...")
+        self.logger.critical("Running the population attack on the target model...")
 
         # get train and test losses
         losses_filepath = f"{self.attack_results_dirpath}/target_model_losses.npz"
@@ -131,7 +132,7 @@ class PopulationAttack:
 
         # run the attack for every alpha
         for alpha in alphas:
-            print(f"For alpha = {alpha}...")
+            self.logger.critical(f"For alpha = {alpha}...\n")
             per_class_thresholds = []
             for c in range(self.num_classes):
                 threshold = calculate_loss_threshold(alpha, pop_losses[c])
@@ -172,9 +173,8 @@ class PopulationAttack:
                         acc=acc[c], roc_auc=roc_auc[c],
                         tn=tn[c], fp=fp[c], tp=tp[c], fn=fn[c])
                 
-                print()
-                print(
-                    f"Population attack performance:\n"
+                self.logger.critical(
+                    f"\nPopulation attack performance:\n"
                     f"Number of points in class: {self.num_data_in_class}\n"
                     f"Accuracy for class {c} = {acc[c]}\n"
                     f"ROC AUC Score for class {c} = {roc_auc[c]}\n"
@@ -209,7 +209,7 @@ class PopulationAttack:
 
             auc_value[c] = round(auc(x=fpr_values[c], y=tpr_values[c]), 5)
 
-            print(fpr_values[c], tpr_values[c], auc_value[c])
+            self.logger.critical(f"fpr_values for class {c}: {fpr_values[c]}, tpr_values for class {c}: {tpr_values[c]}, auc for class {c}: {auc_value[c]}")
 
             plt.plot(fpr_values[c],
                     tpr_values[c],
