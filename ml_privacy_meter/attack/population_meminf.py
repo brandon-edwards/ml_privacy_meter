@@ -213,14 +213,14 @@ class PopulationAttack:
                     fp = data['fp'][()]
                     tn = data['tn'][()]
                     fn = data['fn'][()]
-                    per_class_thresholds = data['per_class_thresholds'][()]
+                    attack_threshold = data['per_class_thresholds'][()][c]
                 tpr = tp / (tp + fn)
                 fpr = fp / (fp + tn)
                 tpr_values[c].append(tpr)
                 fpr_values[c].append(fpr)
                 for loss, class_label in zip(loss_values_of_preds, class_labels_of_preds):
-                    attack_threshold = per_class_thresholds[class_label]
-                    distance_from_attack_threshold[c][alpha].append(np.abs(loss - attack_threshold))
+                    if class_label == c:
+                        distance_from_attack_threshold[c][alpha].append(np.abs(loss - attack_threshold))
                 print(f"Plotting distance from attack threshold for alpha {alpha}...")
                 alpha_str = str(alpha).replace('.', '_')
                 fig, ax = plt.subplots()
