@@ -3,6 +3,7 @@ from pathlib import Path
 
 import numpy as np
 import matplotlib.pyplot as plt
+import pandas as pd
 from sklearn.metrics import accuracy_score, auc, confusion_matrix, roc_auc_score
 
 from ml_privacy_meter.utils.attack_utils import get_predictions, get_per_class_indices
@@ -189,6 +190,21 @@ class PopulationAttack:
         tpr_values = {c: [] for c in range(self.num_classes)}
         fpr_values = {c: [] for c in range(self.num_classes)}
 
+        class_labels_of_preds = np.concatenate([
+            np.argmax(self.y_target_train, axis=1),
+            np.argmax(self.y_target_test, axis=1)
+        ])
+
+        losses_filepath = f"{self.attack_results_dirpath}/target_model_losses.npz"
+        if os.path.isfile(losses_filepath):
+            with np.load(losses_filepath, allow_pickle=True) as loss_data:
+                train_losses = loss_data['train_losses'][()]
+                test_losses = loss_data['test_losses'][()]
+        loss_values_of_preds = np.concatenate([train_losses, test_losses])
+        distance_from_attack_threshold = {c: [] for c in range(self.num_classes)}
+        for c in range(self.num_classes):
+            distance_from_attack_threshold[c] = {alpha: [] for alpha in alphas}
+        
         for c in range(self.num_classes):
             for alpha in alphas:
                 filepath = f'{self.attack_results_dirpath}/attack_results_alpha_{alpha}_numdatinclass_{self.num_data_in_class}_class_{c}.npz'
@@ -197,10 +213,29 @@ class PopulationAttack:
                     fp = data['fp'][()]
                     tn = data['tn'][()]
                     fn = data['fn'][()]
+                    per_class_thresholds = data['per_class_thresholds'][()]
                 tpr = tp / (tp + fn)
                 fpr = fp / (fp + tn)
                 tpr_values[c].append(tpr)
                 fpr_values[c].append(fpr)
+                for loss, class_label in zip(loss_values_of_preds, class_labels_of_preds):
+                    attack_threshold = per_class_thresholds[class_label]
+                    distance_from_attack_threshold[c][alpha].append(np.abs(loss - attack_threshold))
+                print(f"Plotting distance from attack threshold for alpha {alpha}...")
+                alpha_str = str(alpha).replace('.', '_')
+                fig, ax = plt.subplots()
+                ax.hist(distance_from_attack_threshold[c][alpha], bins=75, alpha=0.5, color='b', edgecolor='b')
+                ax.set_xlabel("Distance from Attack Threshold")
+                ax.set_ylabel("Frequency")
+                ax.set_title(f"Alpha {alpha}")
+                plt.savefig(f'{self.attack_results_dirpath}/distance_from_attack_threshold_alpha_{alpha_str}_class_{c}', dpi=250)
+                plt.close(fig)
+
+                # save data to CSV
+                df = pd.DataFrame(data={
+                'x': distance_from_attack_threshold[c][alpha]
+                })
+                df.to_csv(f'{self.attack_results_dirpath}/distance_from_attack_threshold_alpha_{alpha}_class_{c}_data.csv')
 
             tpr_values[c].insert(0, 0)
             fpr_values[c].insert(0, 0)
@@ -222,3 +257,13 @@ class PopulationAttack:
             plt.legend(loc='lower right')
             plt.savefig(f'{self.attack_results_dirpath}/tpr_vs_fpr_class_{c}', dpi=250)
             plt.close()
+
+            # save data to CSV
+            df = pd.DataFrame(data={
+                'fpr': fpr_values[c],
+                'tpr': tpr_values[c]
+            })
+            df.to_csv(f'{self.attack_results_dirpath}/tpr_vs_fpr_class_{c}_data.csv')
+
+        
+
