@@ -226,7 +226,7 @@ class PopulationAttack:
                 fig, ax = plt.subplots()
                 ax.hist(distance_from_attack_threshold[c][alpha], bins=75, alpha=0.5, color='b', edgecolor='b')
                 ax.set_xlabel("Distance from Attack Threshold")
-                ax.set_ylabel("Frequency")
+                ax.set_ylabel("Count")
                 ax.set_title(f"Alpha {alpha}")
                 plt.savefig(f'{self.attack_results_dirpath}/distance_from_attack_threshold_alpha_{alpha_str}_class_{c}', dpi=250)
                 plt.close(fig)
