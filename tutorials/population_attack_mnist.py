@@ -68,10 +68,9 @@ def gandlf_dict_to_label(subject_dict, gandlf_config):
 # The following function was copied and modified from create_pytorch_objects 
 # at https://github.com/sarthakpati/GaNDLF/blob/openfl-integration/GANDLF/compute/generic.py: 
 
-def get_model_class_and_loaders(parameters, train_csv_path, test_csv_path, population_csv_path):
+def get_loaders(parameters, train_csv_path, test_csv_path, population_csv_path):
     """
-    This function gets the model class being used from the global models dict and 
-    creates the data loaders for the population, train, and test data. The train and 
+    This function creates the data loaders for the population, train, and test data. The train and 
     test data should be the same size, and the population data should represent data
     from the same distribution as the train and test but not contain a significant 
     amount of training data.
@@ -81,7 +80,6 @@ def get_model_class_and_loaders(parameters, train_csv_path, test_csv_path, popul
         test_csv_path (str): The path to the training CSV file.
         population_csv_path (str): The path to the validation CSV file.
     Returns:
-        model_class (torch.nn.Module): The model to use for training.
         train_loader (torch.utils.data.DataLoader): The training data loader.
         test_loader (torch.utils.data.DataLoader): The testing data loader.
         population_loader (torch.utils.data.DataLoader): The population data loader.
@@ -147,16 +145,29 @@ def get_model_class_and_loaders(parameters, train_csv_path, test_csv_path, popul
         pin_memory=False,  # params["pin_memory_dataloader"], # this is going OOM if True - needs investigation
     )
 
-    # get the model class (here we use a vgg only global models dict since not using this script much, as it will 
-    # be replaced when PM code is made more modular)
-    model_class = global_models_dict[parameters["model"]["architecture"]]
-
     # these keys contain generators, and are not needed beyond this point in params
     generator_keys_to_remove = ["optimizer_object", "model_parameters"]
     for key in generator_keys_to_remove:
         parameters.pop(key, None)
 
-    return model_class, train_loader, test_loader, population_loader
+    return train_loader, test_loader, population_loader
+
+
+
+def get_model_class(parameters):
+    """
+    This function gets the model class being used from the global models dict.
+    Args:
+        parameters (dict): The parameters dictionary.
+    Returns:
+        model_class (torch.nn.Module): The model to use for training.
+    """
+
+    # get the model class (here we use a vgg only global models dict since not using this script much, as it will 
+    # be replaced when PM code is made more modular)
+    model_class = global_models_dict[parameters["model"]["architecture"]]
+
+    return model_class    
 
 
 
@@ -175,18 +186,18 @@ if __name__ == '__main__':
             nm_gm_dir = os.path.join(nm_dir, "gm_" + gm_str)
             model_filepath = os.path.join(nm_gm_dir, "imagenet_vgg16_best.pth.tar")
 
-            ## set up exp-specific logging
-
             # GaNDLF config path here
             gandlf_config_path = os.path.join(nm_dir, "gm_" + gm_str + ".yaml")
             gandlf_config = parseConfig(gandlf_config_path)
             gandlf_config['device'] = gandlf_config.get('device', device)
 
             # get dataset (loaders) (preprocess script is what changes here for new dataset)
-            target_model_class, train_loader, test_loader, population_loader = get_model_class_and_loaders(parameters=gandlf_config, 
-                                                                                                        population_csv_path=population_csv_path, 
-                                                                                                        train_csv_path=train_csv_path, 
-                                                                                                        test_csv_path=test_csv_path)
+            target_model_class = get_model_class(parameters=gandlf_config)
+            
+            train_loader, test_loader, population_loader = get_loaders(parameters=gandlf_config, 
+                                                                    population_csv_path=population_csv_path, 
+                                                                    train_csv_path=train_csv_path, 
+                                                                    test_csv_path=test_csv_path) 
 
             current_exp_name = "sbu_nm_" + nm_str + "_gm_" + gm_str
             
