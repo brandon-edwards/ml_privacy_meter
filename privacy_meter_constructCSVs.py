@@ -18,7 +18,7 @@ created by pulling from the original train set in such a way that the final priv
 orig_train_csv_path = "/cbica/home/patis/comp_space/testing/gandlf_dp_experiments/train.csv"
 orig_test_csv_path = "/cbica/home/patis/comp_space/testing/gandlf_dp_experiments/valid.csv"
 new_csv_folder = "/cbica/home/patis/comp_space/testing/ml_privacy_meter/sbu_new_csv"
-Path.mkdir(new_csv_folder, exist_ok=True)
+Path(new_csv_folder).mkdir(parents=True, exist_ok=True)
 
 data_name = "SBU"
 
