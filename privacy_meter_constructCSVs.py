@@ -1,6 +1,7 @@
 import pandas as pd 
 import os
 import numpy as np
+from pathlib import Path
 
 """
 This script takes train and val csvs and splits them in order to create population, train, and test csvs to be used
@@ -13,12 +14,13 @@ created by pulling from the original train set in such a way that the final priv
 # Here are some hard coded choices
 ######################################
 
-orig_train_csv_path = "/home/aspaul/MNIST_dataset_png/mnist_png/MNIST_gandlf_training.csv"
-orig_test_csv_path = "/home/aspaul/MNIST_dataset_png/mnist_png/MNIST_gandlf_testing.csv"
+## these should come from cli
+orig_train_csv_path = "/cbica/home/patis/comp_space/testing/gandlf_dp_experiments/train.csv"
+orig_test_csv_path = "/cbica/home/patis/comp_space/testing/gandlf_dp_experiments/valid.csv"
+new_csv_folder = "/cbica/home/patis/comp_space/testing/ml_privacy_meter/sbu_new_csv"
+Path.mkdir(new_csv_folder, exist_ok=True)
 
-new_csv_folder = "/home/aspaul/MNIST_dataset_png/mnist_png/"
-
-data_name = "MNIST"
+data_name = "SBU"
 
 # original test samples will be split into a population set, a test set, and possibly a set that gets dropped
 orig_test_portion_to_pop = 0.5
