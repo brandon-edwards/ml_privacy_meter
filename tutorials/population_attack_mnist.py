@@ -36,12 +36,6 @@ num_data_in_class = 1000
 device = 'cuda'
 exp_name = 'tutorial_pytorch_sbu'
 
-# GaNDLF config path here
-gandlf_config_path = '/home/aspaul/GaNDLF/samples/config_classification_MNIST.yaml'
-
-gandlf_config = parseConfig(gandlf_config_path)
-gandlf_config['device'] = gandlf_config.get('device', device)
-
 population_csv_path = "/cbica/home/patis/comp_space/testing/ml_privacy_meter/SBU_pm_population_class_balanced.csv"
 train_csv_path = "/cbica/home/patis/comp_space/testing/ml_privacy_meter/SBU_pm_train_class_balanced.csv"
 test_csv_path =  "/cbica/home/patis/comp_space/testing/ml_privacy_meter/SBU_pm_test_class_balanced.csv"
@@ -168,12 +162,6 @@ def get_model_class_and_loaders(parameters, train_csv_path, test_csv_path, popul
 
 if __name__ == '__main__':
 
-    # get dataset (loaders) (preprocess script is what changes here for new dataset)
-    target_model_class, train_loader, test_loader, population_loader = get_model_class_and_loaders(parameters=gandlf_config, 
-                                                                                                   population_csv_path=population_csv_path, 
-                                                                                                   train_csv_path=train_csv_path, 
-                                                                                                   test_csv_path=test_csv_path)
-
     # configs that SP has trained for exp ID 20220428_2024
     noise_multipliers = [0.0, 0.25, 0.5, 0.75, 1.0, 2.0, 5.0, 10]
     max_grad_norms = [1.0, 2.0, 5.0, 10]
@@ -188,6 +176,17 @@ if __name__ == '__main__':
             model_filepath = os.path.join(nm_gm_dir, "imagenet_vgg16_best.pth.tar")
 
             ## set up exp-specific logging
+
+            # GaNDLF config path here
+            gandlf_config_path = os.path.join(nm_dir, "gm_" + gm_str + ".yaml")
+            gandlf_config = parseConfig(gandlf_config_path)
+            gandlf_config['device'] = gandlf_config.get('device', device)
+
+            # get dataset (loaders) (preprocess script is what changes here for new dataset)
+            target_model_class, train_loader, test_loader, population_loader = get_model_class_and_loaders(parameters=gandlf_config, 
+                                                                                                        population_csv_path=population_csv_path, 
+                                                                                                        train_csv_path=train_csv_path, 
+                                                                                                        test_csv_path=test_csv_path)
 
             current_exp_name = "sbu_nm_" + nm_str + "_gm_" + gm_str
             
