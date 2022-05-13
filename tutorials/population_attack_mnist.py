@@ -166,8 +166,8 @@ if __name__ == '__main__':
     noise_multipliers = [0.0, 0.25, 0.5, 0.75, 1.0, 2.0, 5.0, 10]
     max_grad_norms = [1.0, 2.0, 5.0, 10]
     
-    ## ".2f" is needed because that's how strings are getting saved
     for noise_multiplier in noise_multipliers:
+        # ".2f" is needed because that's how strings are getting saved
         nm_str = format(noise_multiplier, ".2f")
         nm_dir = os.path.join(base_model_path, "nm_" + nm_str)
         for grad in max_grad_norms:
