@@ -36,9 +36,9 @@ num_data_in_class = 1000
 device = 'cuda'
 exp_name = 'tutorial_pytorch_sbu'
 
-population_csv_path = "/cbica/home/patis/comp_space/testing/ml_privacy_meter/SBU_pm_population_class_balanced.csv"
-train_csv_path = "/cbica/home/patis/comp_space/testing/ml_privacy_meter/SBU_pm_train_class_balanced.csv"
-test_csv_path =  "/cbica/home/patis/comp_space/testing/ml_privacy_meter/SBU_pm_test_class_balanced.csv"
+population_csv_path = "/cbica/home/patis/comp_space/testing/ml_privacy_meter/sbu_new_csv/SBU_pm_population_class_balanced.csv"
+train_csv_path = "/cbica/home/patis/comp_space/testing/ml_privacy_meter/sbu_new_csv/SBU_pm_train_class_balanced.csv"
+test_csv_path =  "/cbica/home/patis/comp_space/testing/ml_privacy_meter/sbu_new_csv/SBU_pm_test_class_balanced.csv"
 
 batch_size = 1
 # We will keep this batch size as some code expects it
