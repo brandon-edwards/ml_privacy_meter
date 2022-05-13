@@ -42,16 +42,18 @@ if __name__ == '__main__':
         orig_train_df = orig_train_df.sample(frac=1).reset_index(drop=True)
         orig_test_df = orig_test_df.sample(frac=1).reset_index(drop=True)
     
+    # column names are now case-insensitive
+    orig_train_df.columns = orig_train_df.columns.str.lower()
     # now split each by class to preserve the class balance when you sample
-    classes = list(orig_train_df['ValueToPredict'].unique())
+    classes = list(orig_train_df['valuetopredict'].unique())
     print(20*"#")
     print(f"Detecting the complete class list from the train csv and found: {classes}.")
     print()
 
-    per_class_orig_train_df_dict = {_class: orig_train_df[orig_train_df['ValueToPredict']==_class] for _class in classes}
+    per_class_orig_train_df_dict = {_class: orig_train_df[orig_train_df['valuetopredict']==_class] for _class in classes}
     orig_train_perclass_counts = [len(this_dict) for this_dict in per_class_orig_train_df_dict.values()]
 
-    per_class_orig_test_df_dict = {_class: orig_test_df[orig_test_df['ValueToPredict']==_class] for _class in classes} 
+    per_class_orig_test_df_dict = {_class: orig_test_df[orig_test_df['valuetopredict']==_class] for _class in classes} 
     orig_test_perclass_counts = [len(this_dict) for this_dict in per_class_orig_test_df_dict.values()]
     
 
