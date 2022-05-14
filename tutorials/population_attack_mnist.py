@@ -204,7 +204,7 @@ if __name__ == '__main__':
             current_exp_name = "sbu_nm_" + nm_str + "_gm_" + gm_str
             
             fhandler = logging.FileHandler(filename='population_attack_' + current_exp_name + '.log', mode='a')
-            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s',datefmt='%Y%m%d')
             fhandler.setFormatter(formatter)
             logger.addHandler(fhandler)
             logger.setLevel(logging.CRITICAL)
