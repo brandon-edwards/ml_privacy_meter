@@ -176,6 +176,8 @@ if __name__ == '__main__':
     # configs that SP has trained for exp ID 20220428_2024
     noise_multipliers = [0.0, 0.25, 0.5, 0.75, 1.0, 2.0, 5.0, 10]
     max_grad_norms = [1.0, 2.0, 5.0, 10]
+
+    ## 20220514: each attack takes ~40 min on P100 node on CUBIC-cluster
     
     for noise_multiplier in noise_multipliers:
         # ".2f" is needed because that's how strings are getting saved
