@@ -212,10 +212,8 @@ if __name__ == '__main__':
             logger.critical(f"Using GANDLF config at: {gandlf_config_path}\n")
             logger.critical(f"PM Population data from: {population_csv_path}\n")
             logger.critical(f"PM Train samples from: {train_csv_path}\n")
-            logger.critical(f"PM test samples from: {test_csv_path}\n")
-
-            
-            logger.critical(f"Model parms from file at {model_filepath}\n")
+            logger.critical(f"PM test samples from: {test_csv_path}\n")            
+            logger.critical(f"Model params from file at {model_filepath}\n")
             
             # original code
             if os.path.isfile(model_filepath):
