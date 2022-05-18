@@ -317,7 +317,7 @@ if __name__ == '__main__':
 
     population_attack_obj.prepare_attack()
 
-    alphas = [0.1, 0.3, 0.5]
+    alphas = np.arange(0,1,0.05).tolist()
 
     logger.critical(f"Running with alphas: {alphas}")
 
