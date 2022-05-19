@@ -84,6 +84,8 @@ if __name__ == "__main__":
                 + " "
                 + args.runnerscript
                 + " "
+                + exp_name
+                + " "
                 + current_config
                 + " "
                 + model_filepath
