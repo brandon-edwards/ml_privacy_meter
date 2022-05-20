@@ -92,3 +92,29 @@ if __name__ == "__main__":
             )
             print(command)
             os.system(command)
+
+    # baseline model
+    nm_dir = os.path.join(base_model_path, "baseline")
+    nm_gm_dir = os.path.join(nm_dir, "base")
+    current_config = os.path.join(nm_dir, "base.yaml")
+    model_filepath = os.path.join(nm_gm_dir, "imagenet_vgg16_best.pth.tar")
+    exp_name = "benign"
+    
+    command = (
+        "qsub -N L_"
+        + exp_name
+        + " -M "
+        + args.email
+        + " -l "
+        + args.gputype
+        + " "
+        + args.runnerscript
+        + " "
+        + exp_name
+        + " "
+        + current_config
+        + " "
+        + model_filepath
+    )
+    print(command)
+    os.system(command)
