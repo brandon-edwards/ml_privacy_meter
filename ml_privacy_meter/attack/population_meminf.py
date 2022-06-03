@@ -9,8 +9,6 @@ from sklearn.metrics import accuracy_score, auc, confusion_matrix, roc_auc_score
 from ml_privacy_meter.utils.attack_utils import get_predictions, get_per_class_indices
 from ml_privacy_meter.utils.attack_utils import calculate_loss_threshold, get_labels
 
-
-
 class PopulationAttack:
     def __init__(self, exp_name, x_population, y_population,
                  x_target_train, y_target_train,
@@ -48,6 +46,14 @@ class PopulationAttack:
         self.attack_results_dirpath = f'logs/population_attack_{exp_name}/'
         if not os.path.isdir(Path(self.attack_results_dirpath)):
             os.mkdir(Path(self.attack_results_dirpath))
+        
+        self.losses_filepath = f"{self.attack_results_dirpath}/target_model_losses.npz"
+        self.prediction_filepath = f"{self.attack_results_dirpath}/target_model_predictions.npz"
+        self.true_filepath = f"{self.attack_results_dirpath}/target_true.npz"
+        
+        self.pop_losses_filepath = f"{self.attack_results_dirpath}/target_model_pop_losses.npz"
+        self.pop_prediction_filepath = f"{self.attack_results_dirpath}/target_model_pop_predictions.npz"
+        self.pop_true_filepath = f"{self.attack_results_dirpath}/target_pop_true.npz"
 
     def prepare_attack(self):
         """
@@ -82,13 +88,13 @@ class PopulationAttack:
             y_pred=y_pred_test
         )
 
-        np.savez(f"{self.attack_results_dirpath}/target_model_losses",
+        np.savez(self.losses_filepath,
                  train_losses=train_losses,
                  test_losses=test_losses)
-        np.savez(f"{self.attack_results_dirpath}/target_model_predictions",
+        np.savez(self.prediction_filepath,
                  y_pred_train=y_pred_train,
                  y_pred_test=y_pred_test)
-        np.savez(f"{self.attack_results_dirpath}/target_true",
+        np.savez(self.true_filepath,
                  y_true_train=self.y_target_train,
                  y_true_test=self.y_target_test)
 
@@ -99,11 +105,11 @@ class PopulationAttack:
         self.logger.critical("Running the population attack on the target model...")
 
         # get train and test losses
-        losses_filepath = f"{self.attack_results_dirpath}/target_model_losses.npz"
-        prediction_filepath = f"{self.attack_results_dirpath}/target_model_predictions.npz"
-        true_filepath = f"{self.attack_results_dirpath}/target_true.npz"
-        if os.path.isfile(losses_filepath) and os.path.isfile(prediction_filepath) and os.path.isfile(true_filepath):
-            with np.load(losses_filepath, allow_pickle=True) as data:
+        # losses_filepath = f"{self.attack_results_dirpath}/target_model_losses.npz"
+        # prediction_filepath = f"{self.attack_results_dirpath}/target_model_predictions.npz"
+        # true_filepath = f"{self.attack_results_dirpath}/target_true.npz"
+        if os.path.isfile(self.losses_filepath) and os.path.isfile(self.prediction_filepath) and os.path.isfile(self.true_filepath):
+            with np.load(self.losses_filepath, allow_pickle=True) as data:
                 train_losses = data['train_losses'][()]
                 test_losses = data['test_losses'][()]
         else:
@@ -117,11 +123,11 @@ class PopulationAttack:
         )
 
         # load per class losses, compute them if they don't exist
-        pop_losses_filepath = f"{self.attack_results_dirpath}/target_model_pop_losses.npz"
-        pop_prediction_filepath = f"{self.attack_results_dirpath}/target_model_pop_predictions.npz"
-        pop_true_filepath = f"{self.attack_results_dirpath}/target_pop_true.npz"
-        if os.path.isfile(pop_losses_filepath) and os.path.isfile(pop_prediction_filepath) and os.path.isfile(pop_true_filepath):
-            with np.load(pop_losses_filepath, allow_pickle=True) as data:
+        # pop_losses_filepath = f"{self.attack_results_dirpath}/target_model_pop_losses.npz"
+        # pop_prediction_filepath = f"{self.attack_results_dirpath}/target_model_pop_predictions.npz"
+        # pop_true_filepath = f"{self.attack_results_dirpath}/target_pop_true.npz"
+        if os.path.isfile(self.pop_losses_filepath) and os.path.isfile(self.pop_prediction_filepath) and os.path.isfile(self.pop_true_filepath):
+            with np.load(self.pop_losses_filepath, allow_pickle=True) as data:
                 pop_losses = data['pop_losses'][()]
         else:
             pop_losses = []
@@ -148,31 +154,29 @@ class PopulationAttack:
                 pop_losses.append(losses)
                 y_pred_pop.append(y_pred)
                 y_true_pop.append(y_class)
-            np.savez(f"{self.attack_results_dirpath}/target_model_pop_losses",
+            np.savez(self.pop_losses_filepath,
                      pop_losses=pop_losses)
-            np.savez(f"{self.attack_results_dirpath}/target_model_pop_predictions",
+            np.savez(self.pop_prediction_filepath,
                      pop_predictions=y_pred_pop)
-            np.savez(f"{self.attack_results_dirpath}/target_pop_true",
+            np.savez(self.pop_true_filepath,
                      pop_true=y_true_pop)
 
         # run the attack for every alpha
         for alpha in alphas:
             self.logger.critical(f"For alpha = {alpha}...\n")
-            # per_class_thresholds = []
-            # for c in range(self.num_classes):
-            #     threshold = calculate_loss_threshold(alpha, pop_losses[c])
-            #     per_class_thresholds.append(threshold)
+            
+            per_class_thresholds = {c: [] for c in range(self.num_classes)}
+            for c in range(self.num_classes):
+                threshold = calculate_loss_threshold(alpha, pop_losses[c])
+                per_class_thresholds[c] = threshold
 
             # generate per class membership predictions: <= threshold, output '1' (member) else '0' (non-member)
             # and record per class membership ground truth(y_eval)
             preds = {c: [] for c in range(self.num_classes)}
             y_eval = {c: [] for c in range(self.num_classes)}
-            per_class_thresholds = {c: [] for c in range(self.num_classes)}
             for (loss, label) in zip(train_losses, self.y_target_train):
                 c = int(np.argmax(label))
-                # threshold = per_class_thresholds[c]
-                threshold = calculate_loss_threshold(alpha, pop_losses[c])
-                per_class_thresholds[c] = threshold
+                threshold = per_class_thresholds[c]
                 if loss <= threshold:
                     preds[c].append(1)
                 else:
@@ -197,18 +201,17 @@ class PopulationAttack:
                 np.savez(f"{self.attack_results_dirpath}/attack_results_alpha_{alpha}_class_{c}",
                         true_labels=y_eval[c], preds=preds[c],
                         alpha=alpha, num_data_in_class=self.num_data_in_class,
-                        per_class_thresholds=per_class_thresholds[c],
+                        class_thresholds=per_class_thresholds[c],
                         acc=acc[c], roc_auc=roc_auc[c],
                         tn=tn[c], fp=fp[c], tp=tp[c], fn=fn[c])
                 
-                self.logger.critical(
-                    f"\nPopulation attack performance:\n"
-                    # f"Number of points in class: {self.num_data_in_class}\n"
-                    f"Accuracy for class {c} = {acc[c]}\n"
-                    f"ROC AUC Score for class {c} = {roc_auc[c]}\n"
-                    f"FPR for class {c}: {fp[c] / (fp[c] + tn[c])}\n"
-                    f"TN, FP, FN, TP for class {c} = {tn[c], fp[c], fn[c], tp[c]}"
-                )
+                logstring = f"\nPopulation attack performance:\n"
+                logstring = logstring + f"Number of population points in class {c}: {len(pop_losses[c])}\n\n"
+                logstring = logstring + f"Accuracy for class {c} = {acc[c]}\n"
+                logstring = logstring + f"ROC AUC Score for class {c} = {roc_auc[c]}\n"
+                logstring = logstring + f"FPR for class {c}: {fp[c] / (fp[c] + tn[c])}\n"
+                logstring = logstring + f"TN, FP, FN, TP for class {c} = {tn[c], fp[c], fn[c], tp[c]}\n\n"
+                self.logger.critical(logstring)
 
     def visualize_attack(self, alphas):
         alphas = sorted(alphas)
@@ -225,7 +228,7 @@ class PopulationAttack:
         class_labels_train = np.argmax(self.y_target_train, axis=1)
         class_labels_test = np.argmax(self.y_target_test, axis=1)
 
-        losses_filepath = f"{self.attack_results_dirpath}/target_model_losses.npz"
+        losses_filepath = self.losses_filepath
         if os.path.isfile(losses_filepath):
             with np.load(losses_filepath, allow_pickle=True) as loss_data:
                 train_losses = loss_data['train_losses'][()]
@@ -248,7 +251,7 @@ class PopulationAttack:
                     fp = data['fp'][()]
                     tn = data['tn'][()]
                     fn = data['fn'][()]
-                    attack_threshold = data['per_class_thresholds'][()]
+                    attack_threshold = data['class_thresholds'][()]
                 tpr = tp / (tp + fn)
                 fpr = fp / (fp + tn)
                 tpr_values[c].append(tpr)
