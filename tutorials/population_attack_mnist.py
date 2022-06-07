@@ -31,7 +31,8 @@ logger = logging.getLogger()
 
 # Set attack hyperparameters
 # This determines how many points per class are used to profile the population loss values
-num_data_in_class = 1000
+# Disabling this as we are going to profile the entire dataset of population loss values  
+# num_data_in_class = 1000
 
 # device = 'cuda'
 # exp_name = 'tutorial_pytorch_sbu'
@@ -40,12 +41,10 @@ num_data_in_class = 1000
 # train_csv_path = "/cbica/home/patis/comp_space/testing/ml_privacy_meter/sbu_new_csv/SBU_pm_train_class_balanced.csv"
 # test_csv_path =  "/cbica/home/patis/comp_space/testing/ml_privacy_meter/sbu_new_csv/SBU_pm_test_class_balanced.csv"
 
+
 batch_size = 1
 # We will keep this batch size as some code expects it
 assert batch_size == 1
-
-# base_model_path = "/cbica/home/patis/comp_space/testing/gandlf_dp_experiments_20220428_2024"
-# model_filepath = '/home/aspaul/GaNDLF/experiment_e15_imagenetvgg16_modeleveryepoch/model_dir/imagenet_vgg16_best.pth.tar'
 
 # defining dict for models - key is the string and the value is the transform object
 global_models_dict = {
@@ -307,8 +306,7 @@ if __name__ == '__main__':
         target_model_filepath=args.model,
         target_model_type=ml_privacy_meter.utils.attack_utils.MODEL_TYPE_PYTORCH,
         target_model_class=target_model_class,  # pass in the model class for pytorch
-        loss_fn=loss_fn,
-        num_data_in_class=num_data_in_class, 
+        loss_fn=loss_fn, 
         num_classes=len(gandlf_config['model']['class_list']), 
         seed=1234, 
         device=args.device, 

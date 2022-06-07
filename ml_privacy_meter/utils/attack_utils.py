@@ -112,7 +112,7 @@ def get_per_class_indices(y, num_data_in_class, seed):
                                                 random_state=seed)
     """
     per_class_splitter = StratifiedShuffleSplit(n_splits=1,
-                                                train_size=0.5,
+                                                train_size=len(y)-num_classes,
                                                 random_state=seed)
     split_indices = []
     # previously the first y was given as x, but we do not need it and x is a loader_restrictor so don't want to use
