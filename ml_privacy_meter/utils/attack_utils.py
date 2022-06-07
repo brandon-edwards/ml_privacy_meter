@@ -48,7 +48,7 @@ def get_predictions(model_filepath, model_type, data, gandlf_config, model_class
     elif model_type == MODEL_TYPE_PYTORCH:
         model = model_class(parameters=gandlf_config)  # pytorch models need to be instantiated
         main_dict = torch.load(model_filepath, device)
-        ### additions for torch==1.11
+        ### these are required for torch==1.11
         state_dict = main_dict["model_state_dict"]
         new_state_dict = {}
         for k, v in state_dict.items():
@@ -57,10 +57,7 @@ def get_predictions(model_filepath, model_type, data, gandlf_config, model_class
             else:
                 name = k
             new_state_dict[name] = v
-        ### additions
-        ## model.load_state_dict(main_dict["model_state_dict"])
         model.load_state_dict(new_state_dict)
-        # model.load_state_dict(torch.load(model_filepath))
         model.to(device)
         model.eval()
 

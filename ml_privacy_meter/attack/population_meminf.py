@@ -43,10 +43,10 @@ class PopulationAttack:
         self.logger = logger
 
         # create results directory
-        self.attack_results_dirpath = f'logs/population_attack_{exp_name}/'
-        if not os.path.isdir(Path(self.attack_results_dirpath)):
-            os.mkdir(Path(self.attack_results_dirpath))
-        
+        base_dir = "/cbica/home/patis/comp_space/testing/ml_privacy_meter/logs/"
+        Path(base_dir).mkdir(parents=True, exist_ok=True)
+        self.attack_results_dirpath = base_dir + f'population_attack_{exp_name}/'
+        Path(self.attack_results_dirpath).mkdir(parents=True, exist_ok=True)   
         self.losses_filepath = f"{self.attack_results_dirpath}/target_model_losses.npz"
         self.prediction_filepath = f"{self.attack_results_dirpath}/target_model_predictions.npz"
         self.true_filepath = f"{self.attack_results_dirpath}/target_true.npz"

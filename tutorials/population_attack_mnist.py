@@ -1,4 +1,4 @@
-import os
+import os, argparse, ast, sys
 from pathlib import Path
 
 from functools import partial
@@ -34,29 +34,22 @@ logger = logging.getLogger()
 # Disabling this as we are going to profile the entire dataset of population loss values  
 # num_data_in_class = 1000
 
-device = 'cuda'
-exp_name = 'tutorial_pytorch_mnist_test_benignmodel'
+# device = 'cuda'
+# exp_name = 'tutorial_pytorch_sbu'
 
-# GaNDLF config path here
-gandlf_config_path = '/home/aspaul/GaNDLF/samples/config_classification_MNIST.yaml'
+# population_csv_path = "/cbica/home/patis/comp_space/testing/ml_privacy_meter/sbu_new_csv/SBU_pm_population_class_balanced.csv"
+# train_csv_path = "/cbica/home/patis/comp_space/testing/ml_privacy_meter/sbu_new_csv/SBU_pm_train_class_balanced.csv"
+# test_csv_path =  "/cbica/home/patis/comp_space/testing/ml_privacy_meter/sbu_new_csv/SBU_pm_test_class_balanced.csv"
 
-gandlf_config = parseConfig(gandlf_config_path)
-gandlf_config['device'] = gandlf_config.get('device', device)
-
-population_csv_path = "/home/aspaul/MNIST_dataset_png/mnist_png/MNIST_pm_population_class_balanced.csv"
-train_csv_path = "/home/aspaul/MNIST_dataset_png/mnist_png/MNIST_pm_train_class_balanced.csv"
-test_csv_path =  "/home/aspaul/MNIST_dataset_png/mnist_png/MNIST_pm_test_class_balanced.csv"
 
 batch_size = 1
 # We will keep this batch size as some code expects it
 assert batch_size == 1
 
-model_filepath = '/home/aspaul/GaNDLF/experiment_e15_imagenetvgg16_modeleveryepoch/model_dir/imagenet_vgg16_best.pth.tar'
-
 # defining dict for models - key is the string and the value is the transform object
 global_models_dict = {
     "vgg16": vgg16,
-   "imagenet_vgg16": imagenet_vgg16
+    "imagenet_vgg16": imagenet_vgg16
 }
 
 def gandlf_dict_to_feature(subject_dict, gandlf_config):
@@ -178,29 +171,97 @@ def get_model_class(parameters):
 
 
 if __name__ == '__main__':
+    copyrightMessage = (
+        "Contact: gandlf@cbica.upenn.edu\n\n"
+        + "This program is NOT FDA/CE approved and NOT intended for clinical use.\n"
+    )
+    parser = argparse.ArgumentParser(
+        prog="PrivacyMeter",
+        formatter_class=argparse.RawTextHelpFormatter,
+        description="Model leakage quantification.\n\n"
+        + copyrightMessage,
+    )
+    parser.add_argument(
+        "-cp",
+        "--csvpop",
+        metavar="",
+        type=str,
+        help="The CSV to population data",
+    )
+    parser.add_argument(
+        "-ctr",
+        "--csvtrain",
+        metavar="",
+        type=str,
+        help="The CSV to train data",
+    )
+    parser.add_argument(
+        "-cts",
+        "--csvtest",
+        metavar="",
+        type=str,
+        help="The CSV to test data",
+    )
+    parser.add_argument(
+        "-c",
+        "--config",
+        metavar="",
+        type=str,
+        help="The configuration file (contains all the information related to the training/inference session)",
+    )
+    parser.add_argument(
+        "-m",
+        "--model",
+        metavar="",
+        type=str,
+        help="The saved model file",
+    )
+    parser.add_argument(
+        "-e",
+        "--expname",
+        metavar="",
+        default="tutorial_pytorch_sbu",
+        type=str,
+        help="The experiment name (default: tutorial_pytorch_sbu)",
+    )
+    parser.add_argument(
+        "-d",
+        "--device",
+        metavar="",
+        default="cuda",
+        type=str,
+        help="The device to run compute on (default: cuda)",
+    )
 
-    fhandler = logging.FileHandler(filename='population_attack_' + exp_name + '.log', mode='a')
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    fhandler.setFormatter(formatter)
-    logger.addHandler(fhandler)
-    logger.setLevel(logging.CRITICAL)
+    args = parser.parse_args()
+
+    # GaNDLF config path here
+    gandlf_config_path = os.path.join(args.config)
+    gandlf_config = parseConfig(gandlf_config_path)
+    gandlf_config['device'] = gandlf_config.get('device', args.device)
 
     # get dataset (loaders) (preprocess script is what changes here for new dataset)
     target_model_class = get_model_class(parameters=gandlf_config)
     
     train_loader, test_loader, population_loader = get_loaders(parameters=gandlf_config, 
-                                                               population_csv_path=population_csv_path, 
-                                                               train_csv_path=train_csv_path, 
-                                                               test_csv_path=test_csv_path) 
+                                                            population_csv_path=args.csvpop, 
+                                                            train_csv_path=args.csvtrain, 
+                                                            test_csv_path=args.csvtest) 
 
+    fhandler = logging.FileHandler(filename='population_attack_' + args.expname + '.log', mode='a')
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s',datefmt='%Y%m%d')
+    fhandler.setFormatter(formatter)
+    logger.addHandler(fhandler)
+    logger.setLevel(logging.CRITICAL)
     logger.critical(f"Running population attack against model {target_model_class}\n")
-    logger.critical(f"Model parms from file at {model_filepath}\n")
     logger.critical(f"Using GANDLF config at: {gandlf_config_path}\n")
-    logger.critical(f"PM Population data from: {population_csv_path}\n")
-    logger.critical(f"PM Train samples from: {train_csv_path}\n")
-    logger.critical(f"PM test samples from: {test_csv_path}\n")
-
-    if os.path.isfile(model_filepath):
+    logger.critical(f"PM Population data from: {args.csvpop}\n")
+    logger.critical(f"PM Train samples from: {args.csvtrain}\n")
+    logger.critical(f"PM test samples from: {args.csvtest}\n")            
+    logger.critical(f"Model params from file at {args.model}\n")
+    
+    # original code
+    if os.path.isfile(args.model):
         logger.critical(f"Model already trained. Continuing...")
     else:
         raise RuntimeError('This script was not intended to be used if the model is not trained yet.')
@@ -237,24 +298,24 @@ if __name__ == '__main__':
     loss_fn = tf.keras.losses.CategoricalCrossentropy(from_logits=True, reduction=tf.keras.losses.Reduction.NONE)
     # loss_fn = CrossEntropyLoss(reduction='none')
     population_attack_obj = ml_privacy_meter.attack.population_meminf.PopulationAttack(
-        exp_name=exp_name,
+        exp_name=args.expname,
         gandlf_config=gandlf_config,
         x_population=x_population, y_population=y_population,
         x_target_train=x_train, y_target_train=y_train,
         x_target_test=x_test, y_target_test=y_test,
-        target_model_filepath=model_filepath,
+        target_model_filepath=args.model,
         target_model_type=ml_privacy_meter.utils.attack_utils.MODEL_TYPE_PYTORCH,
         target_model_class=target_model_class,  # pass in the model class for pytorch
         loss_fn=loss_fn, 
         num_classes=len(gandlf_config['model']['class_list']), 
         seed=1234, 
-        device=device, 
+        device=args.device, 
         logger=logger
     )
 
     population_attack_obj.prepare_attack()
 
-    alphas = [0.1, 0.3, 0.5, 0.7, 0.9]
+    alphas = np.arange(0,1,0.05).tolist()
 
     logger.critical(f"Running with alphas: {alphas}")
 

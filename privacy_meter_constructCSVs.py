@@ -1,6 +1,7 @@
 import pandas as pd 
 import os
 import numpy as np
+from pathlib import Path
 
 """
 This script takes train and val csvs and splits them in order to create population, train, and test csvs to be used
@@ -13,12 +14,13 @@ created by pulling from the original train set in such a way that the final priv
 # Here are some hard coded choices
 ######################################
 
-orig_train_csv_path = "/home/aspaul/MNIST_dataset_png/mnist_png/MNIST_gandlf_training.csv"
-orig_test_csv_path = "/home/aspaul/MNIST_dataset_png/mnist_png/MNIST_gandlf_testing.csv"
+## these should come from cli
+orig_train_csv_path = "/cbica/home/patis/comp_space/testing/gandlf_dp_experiments/train.csv"
+orig_test_csv_path = "/cbica/home/patis/comp_space/testing/gandlf_dp_experiments/valid.csv"
+new_csv_folder = "/cbica/home/patis/comp_space/testing/ml_privacy_meter/sbu_new_csv"
+Path(new_csv_folder).mkdir(parents=True, exist_ok=True)
 
-new_csv_folder = "/home/aspaul/MNIST_dataset_png/mnist_png/"
-
-data_name = "MNIST"
+data_name = "SBU"
 
 # original test samples will be split into a population set, a test set, and possibly a set that gets dropped
 orig_test_portion_to_pop = 0.5
@@ -40,16 +42,18 @@ if __name__ == '__main__':
         orig_train_df = orig_train_df.sample(frac=1).reset_index(drop=True)
         orig_test_df = orig_test_df.sample(frac=1).reset_index(drop=True)
     
+    # column names are now case-insensitive
+    orig_train_df.columns = orig_train_df.columns.str.lower()
     # now split each by class to preserve the class balance when you sample
-    classes = list(orig_train_df['ValueToPredict'].unique())
+    classes = list(orig_train_df['valuetopredict'].unique())
     print(20*"#")
     print(f"Detecting the complete class list from the train csv and found: {classes}.")
     print()
 
-    per_class_orig_train_df_dict = {_class: orig_train_df[orig_train_df['ValueToPredict']==_class] for _class in classes}
+    per_class_orig_train_df_dict = {_class: orig_train_df[orig_train_df['valuetopredict']==_class] for _class in classes}
     orig_train_perclass_counts = [len(this_dict) for this_dict in per_class_orig_train_df_dict.values()]
 
-    per_class_orig_test_df_dict = {_class: orig_test_df[orig_test_df['ValueToPredict']==_class] for _class in classes} 
+    per_class_orig_test_df_dict = {_class: orig_test_df[orig_test_df['valuetopredict']==_class] for _class in classes} 
     orig_test_perclass_counts = [len(this_dict) for this_dict in per_class_orig_test_df_dict.values()]
     
 
